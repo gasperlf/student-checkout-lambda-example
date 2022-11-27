@@ -1,5 +1,7 @@
 package net.ontopsolutions.lambda.s3sns;
 
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification;
 import com.amazonaws.services.s3.AmazonS3;
@@ -22,7 +24,9 @@ public class StudentLambda {
 
 
     @SneakyThrows
-    public void handle(S3Event event) {
+    public void handle(S3Event event, Context context) {
+        LambdaLogger logger = context.getLogger();
+        logger.log("Staring processing event from S3");
         event.getRecords().forEach(record -> {
             // read data from S3 bucket
             S3ObjectInputStream s3ObjectInputStream = getS3Object(record);
