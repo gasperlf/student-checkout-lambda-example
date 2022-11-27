@@ -13,7 +13,7 @@ public class StudentReportLambda {
         logger.log("Staring processing event from S3");
         snsEvent.getRecords().forEach(record -> {
           StudentSNSEvent studentSnsEvent = parser(record.getSNS().getMessage(), StudentSNSEvent.class);
-            System.out.println(record.getSNS().getMessage());
+            logger.log(record.getSNS().getMessage());
         });
     }
 
