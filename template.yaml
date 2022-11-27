@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  student-checkout
+  Sample SAM Template for patient-checkout
+
+Globals:
+  Function:
+    Timeout: 20
+    MemorySize: 512
+    Runtime: java11
+Resources:
+  StudentCheckoutBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${AWS::StackName}-${AWS::AccountId}-${AWS::Region}
+  StudentCheckoutTopic:
+    Type: AWS::SNS::Topic
+  GradeCalculatorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: StudentCheckoutLambda
+      Handler: net.ontopsolutions.lambda.s3sns.StudentLambda::handle
+      Architectures:
+        - x86_64
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Sub ${AWS::StackName}-${AWS::AccountId}-${AWS::Region}
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt StudentCheckoutTopic.TopicName
+      Environment:
+        Variables:
+          STUDENT_CHECKOUT_TOPIC: !Ref StudentCheckoutTopic
+          JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket: !Ref StudentCheckoutBucket
+            Events: S3:ObjectCreated:*
+  ReportGeneratorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: StudentCheckoutLambda
+      Handler: net.ontopsolutions.lambda.s3sns.StudentReportLambda::handle
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          JAVA_TOOL_OPTIONS: -XX:+TieredCompilation -XX:TieredStopAtLevel=1 # More info about tiered compilation https://aws.amazon.com/blogs/compute/optimizing-aws-lambda-function-performance-for-java/
+      Events:
+        SNSEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref StudentCheckoutBucket
